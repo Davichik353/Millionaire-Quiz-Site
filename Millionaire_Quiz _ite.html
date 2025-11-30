@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кто хочет стать миллионером — игра</title>
+
+  <style>
+    :root{
+      --bg:#05062a; --panel:#0f2a91; --accent:#f7c04a;
+      --card:#192a6e; --glass:rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;background:linear-gradient(180deg,var(--bg),#07103a);
+      font-family:Arial;color:#fff;display:flex;
+      justify-content:center;align-items:center;height:100vh;
+    }
+    .stage{width:960px;max-width:96%;display:grid;
+      grid-template-columns:1fr 320px;gap:20px;}
+    .panel{background:linear-gradient(180deg,var(--panel),#08104a);
+      border-radius:16px;padding:18px;border:4px solid rgba(247,192,74,0.2);
+      box-shadow:0 10px 40px rgba(0,0,0,0.6);position:relative;}
+
+    /* Lights */
+    .lights{position:absolute;inset:-18px;padding:12px;border-radius:22px;pointer-events:none}
+    .lights::before{content:"";position:absolute;inset:0;border-radius:22px;
+      padding:8px;background:linear-gradient(90deg,transparent,rgba(247,192,74,0.1),transparent)}
+    .bulbs{display:flex;gap:6px;justify-content:center}
+    .bulb{width:10px;height:10px;border-radius:50%;background:#222;
+      animation:blink 1.6s infinite;}
+    @keyframes blink{0%{filter:brightness(.6)}50%{filter:brightness(2)}100%{filter:brightness(.6)}}
+
+    .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+    .chip{background:var(--glass);padding:8px 10px;border-radius:10px;
+      border:1px solid rgba(255,255,255,0.05);font-size:14px}
+
+    .question-box{background:#122171;padding:20px;border-radius:12px;
+      border:3px solid rgba(247,192,74,0.1);font-size:20px;min-height:90px;
+      display:flex;align-items:center;justify-content:center;text-align:center}
+
+    .answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+    .answer{background:#23348f;padding:12px;border-radius:10px;cursor:pointer;
+      border:2px solid rgba(247,192,74,0.15);transition:0.2s;}
+    .answer:hover{transform:translateY(-4px);box-shadow:0 8px 20px rgba(0,0,0,0.5)}
+    .correct{background:#2c8f3b !important;border-color:#4cff4c !important;}
+    .wrong{background:#a72b2b!important;}
+
+    .scoreboard{background:#08103a;padding:16px;border-radius:12px;
+      border:3px solid rgba(255,255,255,0.05)}
+    .money-item{padding:8px 10px;display:flex;justify-content:space-between;border-radius:8px}
+    .active{background:rgba(247,192,74,0.25);font-weight:bold;}
+
+    .meter{height:10px;background:#333;border-radius:999px;margin-top:12px;overflow:hidden}
+    .meter>div{height:100%;width:0;background:linear-gradient(90deg,var(--accent),#ffe08c);}  
+
+    .footer{margin-top:14px;display:flex;justify-content:space-between}
+    .btn{background:var(--accent);padding:8px 10px;border:none;font-weight:bold;border-radius:8px;cursor:pointer;color:#111}
+    .small{background:#333;border:1px solid rgba(255,255,255,0.2);padding:8px;border-radius:8px;color:white;cursor:pointer}
+  </style>
+</head>
+
+<body>
+  <div class="stage">
+    <div class="panel">
+      <div class="lights"><div class="bulbs" id="bulbRow"></div></div>
+
+      <div class="header">
+        <div class="chip">Уровень: <span id="level">1 / 10</span></div>
+        <div class="chip">⏳ <span id="timer">30</span></div>
+        <div class="chip">Очки: <span id="score">0</span></div>
+      </div>
+
+      <div id="question" class="question-box">Загрузка...</div>
+
+      <div class="answers">
+        <div class="answer" id="a0"></div>
+        <div class="answer" id="a1"></div>
+        <div class="answer" id="a2"></div>
+        <div class="answer" id="a3"></div>
+      </div>
+
+      <div class="meter"><div id="meterFill"></div></div>
+
+      <div class="footer">
+        <div>
+          <button class="small" id="btn5050">50/50</button>
+          <button class="small" id="btnRestart">Рестарт</button>
+        </div>
+        <button class="btn" id="playMusic">Воспроизвести музыку</button>
+      </div>
+    </div>
+
+    <div class="scoreboard">
+      <ul id="moneyList"></ul>
+      <button class="btn" id="btnNext">Далее</button>
+    </div>
+  </div>
+
+  <!-- ТВОЯ МУЗЫКА -->
+  <audio id="bgMusic" loop>
+    <source src="q1-5-bed-2008.mp3" type="audio/mpeg">
+  </audio>
+
+  <audio id="sfxCorrect"><source src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg" /></audio>
+  <audio id="sfxWrong"><source src="https://actions.google.com/sounds/v1/cartoon/slide_whistle_to_dull_thud.ogg" /></audio>
+
+  <script>
+    const questions = [
+      {q:"Когда был принят Закон об образовании в Республике Узбекистан?",a:["1991","1992","1997","1999"],correct:2,prize:1000},
+      {q:"Дуальное образование это?",a:["Смешанное обучение на предприятии и в колледже","Послевузовское","Проф. образование","Детское обучение"],correct:0,prize:2000},
+      {q:"Когда принят Закон о подготовке кадров?",a:["2020","1997","2013","29.08.1997"],correct:3,prize:3000},
+      {q:"Когда была принята новая редакция?",a:["2020","1997","1991","1992"],correct:0,prize:5000},
+      {q:"Хемис это –",a:["Приложение высшего образования","Программа ЕС","Грамотность","Экстернат"],correct:0,prize:10000},
+      {q:"Инклюзивное образование – это",a:["Непрерывное воспитание","Равный доступ","Повышение квалификации","Послевузовское"],correct:1,prize:20000},
+      {q:"Этапы образования в Узбекистане?",a:["5","6","7","2"],correct:1,prize:50000},
+      {q:"Третий ренессанс – это",a:["Внимание к предкам","Гос. политика","Новый Узбекистан","Традиции"],correct:2,prize:100000},
+      {q:"Культура –",a:["Коммуникации","Ритуалы","Нравственный рост","Интеллектуальный труд"],correct:3,prize:200000},
+      {q:"Статья права на образование?",a:["41","25","105","50"],correct:0,prize:1000000}
+    ];
+
+    let idx=0, score=0, used5050=false, timerInt=null;
+
+    const qEl=document.getElementById("question");
+    const ans=[
+      document.getElementById("a0"),
+      document.getElementById("a1"),
+      document.getElementById("a2"),
+      document.getElementById("a3")
+    ];
+    const scoreEl=document.getElementById("score");
+    const timerEl=document.getElementById("timer");
+    const levelEl=document.getElementById("level");
+    const meterFill=document.getElementById("meterFill");
+    const moneyList=document.getElementById("moneyList");
+
+    const bgMusic=document.getElementById("bgMusic");
+    document.getElementById("playMusic").onclick=()=>{
+      if(bgMusic.paused){bgMusic.play();event.target.textContent="Пауза"}
+      else{bgMusic.pause();event.target.textContent="Воспроизвести музыку"}
+    }
+
+    document.getElementById("btn5050").onclick=()=>{
+      if(used5050)return;
+      used5050=true;
+      const c=questions[idx].correct;
+      let w=[0,1,2,3].filter(i=>i!==c);
+      w.sort(()=>Math.random()-0.5);
+      w.slice(0,2).forEach(i=>ans[i].style.visibility="hidden");
+    }
+
+    document.getElementById("btnRestart").onclick=()=>{idx=0;score=0;loadQ()}
+    document.getElementById("btnNext").onclick=()=>{idx++;loadQ()}
+
+    for(let i=0;i<28;i++){
+      let b=document.createElement("div");b.className="bulb";
+      document.getElementById("bulbRow").appendChild(b);
+    }
+
+    function timer(){
+      let t=30;
+      clearInterval(timerInt);
+      timerEl.textContent=t;
+      timerInt=setInterval(()=>{
+        t--; timerEl.textContent=t;
+        meterFill.style.width=(100*(30-t)/30)+"%";
+        if(t<=0){clearInterval(timerInt);wrongAnswer()}
+      },1000);
+    }
+
+    function loadQ(){
+      if(idx>=questions.length){alert("Игра окончена! Очки: "+score);return;}
+
+      used5050=false;
+      ans.forEach(a=>{a.style.visibility="visible";a.className="answer"});
+
+      const q=questions[idx];
+      qEl.textContent=q.q;
+      levelEl.textContent=(idx+1)+" / "+questions.length;
+
+      q.a.forEach((t,i)=>ans[i].textContent=t);
+      ans.forEach((b,i)=>b.onclick=()=>choose(i));
+
+      renderMoney();
+      timer();
+    }
+
+    function renderMoney(){
+      moneyList.innerHTML="";
+      for(let i=questions.length-1;i>=0;i--){
+        const li=document.createElement("li");
+        li.className="money-item"+(i===idx?" active":"");
+        li.innerHTML=`<span>Вопрос ${i+1}</span><span>${questions[i].prize}</span>`;
+        moneyList.appendChild(li);
+      }
+    }
+
+    function choose(i){
+      clearInterval(timerInt);
+      const c=questions[idx].correct;
+      if(i===c){
+        ans[i].classList.add("correct");
+        score+=questions[idx].prize/1000;
+        scoreEl.textContent=score;
+        setTimeout(()=>{idx++;loadQ()},800);
+      }else wrongAnswer(i);
+    }
+
+    function wrongAnswer(i){
+      const c=questions[idx].correct;
+      ans[c].classList.add("correct");
+      if(i!==undefined) ans[i].classList.add("wrong");
+      setTimeout(()=>{alert("Неверно! Очки: "+score);idx=0;score=0;loadQ();},1000);
+    }
+
+    loadQ();
+  </script>
+</body>
+</html>
