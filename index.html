@@ -1,3 +1,4 @@
+<!-- Copy of Millionaire_Quiz _ite.html created to run as default index page -->
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -145,7 +146,6 @@
     playBtn.onclick = (e) => {
       if(bgMusic.paused){
         bgMusic.play().then(()=>{ e.target.textContent = "Пауза" }).catch(err=>{
-          // If local file can't be played (missing or blocked), attempt a remote fallback and try again
           console.warn('bgMusic play failed, attempting remote fallback', err);
           bgMusic.src = "https://cdn.pixabay.com/download/audio/2022/03/15/audio_0b8c7d2b6c.mp3?filename=dramatic-ambient-11020.mp3";
           bgMusic.play().then(()=>{ e.target.textContent = "Пауза" }).catch(()=>{ alert('Воспроизведение музыки невозможно. Разрешите звук или поместите файл q1-5-bed-2008.mp3 рядом с HTML.')});
