@@ -26,3 +26,19 @@ Or, if you renamed to `index.html`:
 6. If you run into any problems, please open the browser DevTools (F12) and check the console for errors.
 
 If you'd like, I can also add a proper local `index.html` and a small folder structure for assets (audio, images) and update in-file audio paths.
+
+Local domain (hosts) testing
+---------------------------------
+If you'd like to use a custom local domain (for example `mytestsite.local`) for testing, add an entry to your hosts file (Windows):
+
+```powershell
+# as Administrator, edit C:\Windows\System32\drivers\etc\hosts
+# add the following line (example):
+127.0.0.1    mytestsite.local
+```
+
+Then visit: http://mytestsite.local:8000/ (or just http://mytestsite.local/ if you use port 80).
+
+Custom domain for deployment
+---------------------------------
+If you want to use a real domain for the live site, add a `CNAME` file to the repo with your domain (this repo contains a `CNAME` with `example.com` currently). Configure your DNS provider: point the apex or `www` record to the host provider (GitHub Pages: A or CNAME records). If you provide a domain, I can replace `example.com` in the `CNAME` with your actual domain.
